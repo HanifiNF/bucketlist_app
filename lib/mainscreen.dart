@@ -50,7 +50,9 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(context, "/add");
+          Navigator.push(context, MaterialPageRoute(builder: (context)){
+            return bucketListData;
+          });
         },
         shape: CircleBorder(),
         child: Icon(Icons.add),
