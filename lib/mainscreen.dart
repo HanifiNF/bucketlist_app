@@ -1,3 +1,5 @@
+import 'package:bucketlist_app/addbucketlist.dart';
+import 'package:bucketlist_app/viewitems.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 
@@ -11,6 +13,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   List<dynamic> bucketListData = [];
   bool isLoading = false;
+  bool isError = false;
 
   Future<void> getData() async {
     setState(() {
@@ -22,20 +25,12 @@ class _MainScreenState extends State<MainScreen> {
       );
       bucketListData = response.data;
       isLoading = false;
+      isError = false;
       setState(() {});
     } catch (e) {
       isLoading = false;
+      isError = true;
       setState(() {});
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text(
-              "Cannot connect to the server! Try after a few seconds!",
-            ),
-          );
-        },
-      );
     }
   }
 
@@ -45,14 +40,66 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
   }
 
+  Widget errorWidget({required String errorText}) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.warning),
+          Text(errorText),
+          ElevatedButton(onPressed: getData, child: Text("Try again")),
+        ],
+      ),
+    );
+  }
+
+  Widget ListDataWidget() {
+    return ListView.builder(
+      itemCount: bucketListData.length,
+      itemBuilder: (BuildContext context, int index) {
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: ListTile(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) {
+                    return Viewitemsscreen(
+                      title: bucketListData[index]['item'] ?? "",
+                      image: bucketListData[index]['image'] ?? "",
+                    );
+                  },
+                ),
+              );
+            },
+            leading: CircleAvatar(
+              radius: 25,
+              backgroundImage: NetworkImage(
+                bucketListData[index]['image'] ?? "",
+              ),
+            ),
+            title: Text(bucketListData[index]['item'] ?? ""),
+            trailing: Text(bucketListData[index]['cost'].toString() ?? ""),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context)){
-            return bucketListData;
-          });
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) {
+                return Addbucketlistscreen();
+              },
+            ),
+          );
         },
         shape: CircleBorder(),
         child: Icon(Icons.add),
@@ -76,26 +123,9 @@ class _MainScreenState extends State<MainScreen> {
         },
         child: isLoading
             ? Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                itemCount: bucketListData.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        radius: 25,
-                        backgroundImage: NetworkImage(
-                          bucketListData[index]['image'] ?? "",
-                        ),
-                      ),
-                      title: Text(bucketListData[index]['item'] ?? ""),
-                      trailing: Text(
-                        bucketListData[index]['cost'].toString() ?? "",
-                      ),
-                    ),
-                  );
-                },
-              ),
+            : isError
+            ? errorWidget(errorText: "Error connecting...")
+            : ListDataWidget(),
       ),
     );
   }
