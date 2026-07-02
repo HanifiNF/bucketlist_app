@@ -24,7 +24,12 @@ class _ViewitemsscreenState extends State<Viewitemsscreen> {
                     return AlertDialog(
                       title: Text("Delete the bucket data?"),
                       actions: [
-                        InkWell(onTap: () {}, child: Text("cancel")),
+                        InkWell(
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text("cancel"),
+                        ),
                         InkWell(onTap: () {}, child: Text("Confirm")),
                       ],
                     );

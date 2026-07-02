@@ -23,7 +23,13 @@ class _MainScreenState extends State<MainScreen> {
       Response response = await Dio().get(
         "https://flutterapitest-73108-default-rtdb.firebaseio.com/bucketlist.json",
       );
-      bucketListData = response.data;
+
+      if (response.data is List) {
+        bucketListData = response.data;
+      } else {
+        bucketListData = [];
+      }
+
       isLoading = false;
       isError = false;
       setState(() {});
@@ -76,11 +82,11 @@ class _MainScreenState extends State<MainScreen> {
             leading: CircleAvatar(
               radius: 25,
               backgroundImage: NetworkImage(
-                bucketListData[index]['image'] ?? "",
+                bucketListData[index]?['image'] ?? "",
               ),
             ),
-            title: Text(bucketListData[index]['item'] ?? ""),
-            trailing: Text(bucketListData[index]['cost'].toString() ?? ""),
+            title: Text (bucketListData[index]?['item'] ?? ""),
+            trailing: Text(bucketListData[index]?['cost'].toString() ?? ""),
           ),
         );
       },
@@ -125,6 +131,8 @@ class _MainScreenState extends State<MainScreen> {
             ? Center(child: CircularProgressIndicator())
             : isError
             ? errorWidget(errorText: "Error connecting...")
+            : bucketListData.length < 1
+            ? Center(child: Text("No data Available"))
             : ListDataWidget(),
       ),
     );
