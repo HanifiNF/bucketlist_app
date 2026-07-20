@@ -4,11 +4,11 @@ import 'package:dio/dio.dart';
 class Viewitemsscreen extends StatefulWidget {
   String title;
   String image;
-  int index;
+  String itemKey;
   final VoidCallback? onDelete;
   Viewitemsscreen({
     super.key,
-    required this.index,
+    required this.itemKey,
     required this.title,
     required this.image,
     this.onDelete,
@@ -22,8 +22,8 @@ class _ViewitemsscreenState extends State<Viewitemsscreen> {
   Future<void> deleteData() async {
     Navigator.pop(context);
     try {
-      Response response = await Dio().delete(
-        "https://flutterapitest-73108-default-rtdb.firebaseio.com/bucketlist/${widget.index}.json",
+      await Dio().delete(
+        "https://flutterapitest-73108-default-rtdb.firebaseio.com/bucketlist/${widget.itemKey}.json",
       );
       if (mounted) {
         Navigator.pop(context);
@@ -54,10 +54,7 @@ class _ViewitemsscreenState extends State<Viewitemsscreen> {
                           },
                           child: Text("cancel"),
                         ),
-                        InkWell(
-                          onTap: deleteData,
-                          child: Text("Confirm"),
-                        ),
+                        InkWell(onTap: deleteData, child: Text("Confirm")),
                       ],
                     );
                   },

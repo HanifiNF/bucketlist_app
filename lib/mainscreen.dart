@@ -49,11 +49,16 @@ class _MainScreenState extends State<MainScreen> {
         "https://flutterapitest-73108-default-rtdb.firebaseio.com/bucketlist.json",
       );
 
-      if (response.data is List) {
-        bucketListData = response.data;
-      } else {
-        bucketListData = [];
+      final data = response.data;
+      final List<MapEntry<String, dynamic>> entries = [];
+      if (data is List) {
+        for (int i = 0; i < data.length; i++) {
+          entries.add(MapEntry(i.toString(), data[i]));
+        }
+      } else if (data is Map) {
+        data.forEach((key, value) => entries.add(MapEntry(key, value)));
       }
+      bucketListData = entries;
 
       isLoading = false;
       isError = false;
@@ -71,27 +76,35 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
   }
 
-  List<dynamic> get filteredData {
-    final data = bucketListData.where((item) {
-      if (item is! Map) return false;
-      final name = (item['item'] ?? "").toString().toLowerCase();
-      final cost = item['cost'] ?? 0;
-      if (searchQuery.isNotEmpty &&
-          !name.contains(searchQuery.toLowerCase())) {
-        return false;
-      }
-      if (minCost != null && cost < minCost!) return false;
-      if (maxCost != null && cost > maxCost!) return false;
-      return true;
-    }).toList();
+  List<MapEntry<String, dynamic>> get filteredData {
+    final entries =
+        bucketListData.whereType<MapEntry<String, dynamic>>().where((entry) {
+          final item = entry.value;
+          if (item is! Map) return false;
+          final name = (item['item'] ?? "").toString().toLowerCase();
+          final cost = item['cost'] ?? 0;
+          if (searchQuery.isNotEmpty &&
+              !name.contains(searchQuery.toLowerCase())) {
+            return false;
+          }
+          if (minCost != null && cost < minCost!) return false;
+          if (maxCost != null && cost > maxCost!) return false;
+          return true;
+        }).toList();
 
     if (sortBy == "asc") {
-      data.sort((a, b) => (a['cost'] ?? 0).compareTo(b['cost'] ?? 0));
+      entries.sort(
+        (a, b) =>
+            ((a.value['cost'] ?? 0) as num).compareTo((b.value['cost'] ?? 0)),
+      );
     } else if (sortBy == "desc") {
-      data.sort((a, b) => (b['cost'] ?? 0).compareTo(a['cost'] ?? 0));
+      entries.sort(
+        (a, b) =>
+            ((b.value['cost'] ?? 0) as num).compareTo((a.value['cost'] ?? 0)),
+      );
     }
 
-    return data;
+    return entries;
   }
 
   Widget errorWidget({required String errorText}) {
@@ -112,7 +125,8 @@ class _MainScreenState extends State<MainScreen> {
     return ListView.builder(
       itemCount: list.length,
       itemBuilder: (BuildContext context, int index) {
-        final item = list[index];
+        final entry = list[index];
+        final item = entry.value;
         if (item is! Map) return SizedBox();
         return Padding(
           padding: const EdgeInsets.all(8.0),
@@ -123,7 +137,7 @@ class _MainScreenState extends State<MainScreen> {
                 MaterialPageRoute(
                   builder: (context) {
                     return Viewitemsscreen(
-                      index: index,
+                      itemKey: entry.key,
                       title: item['item'] ?? "",
                       image: item['image'] ?? "",
                       onDelete: getData,
@@ -261,7 +275,7 @@ class _MainScreenState extends State<MainScreen> {
             context,
             MaterialPageRoute(
               builder: (context) {
-                return Addbucketlistscreen();
+                return Addbucketlistscreen(onAdd: getData);
               },
             ),
           );
@@ -272,17 +286,32 @@ class _MainScreenState extends State<MainScreen> {
 
       appBar: AppBar(
         title: isSearching
-            ? TextField(
-                controller: searchController,
-                autofocus: true,
-                decoration: InputDecoration(
-                  hintText: "Search items...",
-                  border: InputBorder.none,
+            ? Theme(
+                data: Theme.of(context).copyWith(
+                  textSelectionTheme: TextSelectionThemeData(
+                    cursorColor: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-                style: TextStyle(color: Colors.white),
-                onChanged: (value) {
-                  setState(() => searchQuery = value);
-                },
+                child: TextField(
+                  controller: searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: "Search items...",
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  cursorColor: Theme.of(context).colorScheme.onSurface,
+                  onChanged: (value) {
+                    setState(() => searchQuery = value);
+                  },
+                ),
               )
             : Text("Bucket list"),
         actions: [
